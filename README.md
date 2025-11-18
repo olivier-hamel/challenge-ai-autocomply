@@ -288,7 +288,7 @@ Format obligatoire :
   ]
 }
 ```
-Ce résultat doit être sauvegardé dans un fichier nommé  `result.json` à la racine de votre dossier d'execution et de soumission.
+Ce résultat doit être sauvegardé dans un fichier nommé  `result.json` à la racine de votre dossier d'execution et de soumission (d'équipe).
 
 **⚠️ IMPORTANT - Noms des Sections :**
 
