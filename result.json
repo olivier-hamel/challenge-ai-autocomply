@@ -1,0 +1,79 @@
+{
+  "sections": [
+    {
+      "name": "Articles & Amendments",
+      "startPage": 1,
+      "endPage": 7
+    },
+    {
+      "name": "By Laws",
+      "startPage": 21,
+      "endPage": 41
+    },
+    {
+      "name": "Unanimous Shareholder Agreement",
+      "startPage": 54,
+      "endPage": 59
+    },
+    {
+      "name": "Share Certificates",
+      "startPage": 64,
+      "endPage": 66
+    },
+    {
+      "name": "Unanimous Shareholder Agreement",
+      "startPage": 67,
+      "endPage": 86
+    },
+    {
+      "name": "By Laws",
+      "startPage": 87,
+      "endPage": 87
+    },
+    {
+      "name": "Minutes & Resolutions",
+      "startPage": 88,
+      "endPage": 89
+    },
+    {
+      "name": "Securities Register",
+      "startPage": 103,
+      "endPage": 104
+    },
+    {
+      "name": "Directors Register",
+      "startPage": 121,
+      "endPage": 123
+    },
+    {
+      "name": "Minutes & Resolutions",
+      "startPage": 127,
+      "endPage": 129
+    },
+    {
+      "name": "Minutes & Resolutions",
+      "startPage": 147,
+      "endPage": 152
+    },
+    {
+      "name": "Securities Register",
+      "startPage": 154,
+      "endPage": 159
+    },
+    {
+      "name": "Unanimous Shareholder Agreement",
+      "startPage": 163,
+      "endPage": 165
+    },
+    {
+      "name": "Securities Register",
+      "startPage": 175,
+      "endPage": 184
+    },
+    {
+      "name": "Share Certificates",
+      "startPage": 185,
+      "endPage": 215
+    }
+  ]
+}
