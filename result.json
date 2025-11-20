@@ -1,14 +1,109 @@
 {
   "sections": [
     {
+      "name": "By Laws",
+      "startPage": 21,
+      "endPage": 26
+    },
+    {
+      "name": "Articles & Amendments",
+      "startPage": 34,
+      "endPage": 36
+    },
+    {
+      "name": "Articles & Amendments",
+      "startPage": 40,
+      "endPage": 42
+    },
+    {
+      "name": "By Laws",
+      "startPage": 61,
+      "endPage": 63
+    },
+    {
+      "name": "Share Certificates",
+      "startPage": 64,
+      "endPage": 66
+    },
+    {
+      "name": "By Laws",
+      "startPage": 67,
+      "endPage": 69
+    },
+    {
+      "name": "Unanimous Shareholder Agreement",
+      "startPage": 79,
+      "endPage": 81
+    },
+    {
+      "name": "By Laws",
+      "startPage": 82,
+      "endPage": 84
+    },
+    {
+      "name": "Unanimous Shareholder Agreement",
+      "startPage": 106,
+      "endPage": 108
+    },
+    {
       "name": "Minutes & Resolutions",
-      "startPage": 2,
+      "startPage": 115,
+      "endPage": 117
+    },
+    {
+      "name": "Securities Register",
+      "startPage": 127,
+      "endPage": 129
+    },
+    {
+      "name": "Securities Register",
+      "startPage": 136,
+      "endPage": 138
+    },
+    {
+      "name": "Unanimous Shareholder Agreement",
+      "startPage": 139,
+      "endPage": 141
+    },
+    {
+      "name": "Directors Register",
+      "startPage": 148,
+      "endPage": 150
+    },
+    {
+      "name": "Minutes & Resolutions",
+      "startPage": 151,
+      "endPage": 153
+    },
+    {
+      "name": "Securities Register",
+      "startPage": 154,
+      "endPage": 156
+    },
+    {
+      "name": "Unanimous Shareholder Agreement",
+      "startPage": 160,
+      "endPage": 162
+    },
+    {
+      "name": "Minutes & Resolutions",
+      "startPage": 172,
+      "endPage": 174
+    },
+    {
+      "name": "Securities Register",
+      "startPage": 187,
       "endPage": 189
     },
     {
-      "name": "Shareholder Register",
-      "startPage": 172,
+      "name": "Ultimate Beneficial Owner Register",
+      "startPage": 190,
       "endPage": 192
+    },
+    {
+      "name": "Securities Register",
+      "startPage": 202,
+      "endPage": 204
     }
   ]
 }

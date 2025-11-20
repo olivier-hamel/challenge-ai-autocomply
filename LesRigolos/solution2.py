@@ -1,16 +1,4 @@
-#!/usr/bin/env python3
-"""
-Option C — Robust Minute Book Section Splitter (text-based, smoothed, production-ready)
-
-Principes :
-- Extraire le texte page par page (PyMuPDF). Si page vide et pytesseract dispo, OCR fallback.
-- Classer pages en utilisant l'endpoint /ask (texte), avec prompts stricts qui forcent
-  l'utilisation des 10 noms exacts.
-- Échantillonnage initial (sample_rate), puis affinement par recherche binaire textuelle.
-- Lissage (majority + non-overlap) et sortie `result.json` avec les noms EXACTS requis.
-- Conserve des logs prints pour debug et mesure des requêtes.
-"""
-
+# LesRigolos/solution2.py
 import fitz
 import requests
 import json
@@ -21,7 +9,7 @@ from difflib import get_close_matches
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional
 
-# ---------- CONFIG ----------
+
 API_URL = "https://ai-models.autocomply.ca"
 API_KEY = "sk-ac-7f8e9d2c4b1a6e5f3d8c7b9a2e4f6d1c"
 MODEL = "gemini-2.5-flash"  # used for /ask
@@ -40,21 +28,17 @@ SECTIONS = [
     "Ultimate Beneficial Owner Register"
 ]
 
-# sampling granularity: lower -> more API calls but more robust
-SAMPLE_RATE = 3  # sample 1 page every 3 pages (tuneable)
-BIN_SEARCH_WINDOW = 20  # pages to look around approximate boundary
-# max number of pages to include in a single /ask query (keep prompt size reasonable)
+
+SAMPLE_RATE = 3  
+BIN_SEARCH_WINDOW = 20  
 MAX_CONTEXT_PAGES = 5
 
-# ---------- UTIL ----------
 def safe_json_extract(raw: str) -> dict:
-    """Extract JSON object from model raw output robustly; fallback to Unknown dict."""
     match = re.search(r"\{.*?\}", raw, flags=re.S)
     if not match:
         return {"section": "Unknown", "position": "unknown", "confidence": 0.0}
     try:
         j = json.loads(match.group())
-        # normalize keys
         return {
             "section": j.get("section", "Unknown"),
             "position": j.get("position", "unknown"),
@@ -64,21 +48,18 @@ def safe_json_extract(raw: str) -> dict:
         return {"section": "Unknown", "position": "unknown", "confidence": 0.0}
 
 def map_to_official(name: str) -> str:
-    """Map model returned section name to one of SECTIONS using close match; else Unknown."""
+
     if name in SECTIONS:
         return name
-    # try fuzzy match (case-insensitive)
     candidates = get_close_matches(name, SECTIONS, n=1, cutoff=0.6)
     if candidates:
         return candidates[0]
-    # also try simple heuristics
     name_low = name.lower()
     for s in SECTIONS:
         if all(word.lower() in name_low for word in s.split()[:2]):
             return s
     return "Unknown"
 
-# ---------- TEXT EXTRACTION ----------
 def extract_texts(pdf_path: str) -> List[str]:
     doc = fitz.open(pdf_path)
     pages = []
@@ -89,9 +70,7 @@ def extract_texts(pdf_path: str) -> List[str]:
     doc.close()
     return pages
 
-# ---------- OCR fallback (optional) ----------
 def ocr_page_image_b64(doc: fitz.Document, page_index: int) -> Optional[str]:
-    """Return PNG bytes base64 for OCR if needed. Caller may run pytesseract externally."""
     try:
         page = doc.load_page(page_index)
         pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
@@ -99,7 +78,7 @@ def ocr_page_image_b64(doc: fitz.Document, page_index: int) -> Optional[str]:
     except Exception:
         return None
 
-# ---------- API INTERFACE (text-based classification) ----------
+
 def ask_text_classification(text_context: str) -> dict:
     """Call /ask with a strict prompt and return parsed dict."""
     prompt = f"""
@@ -127,7 +106,7 @@ Text to classify:
 """
     payload = {"query": prompt, "model": MODEL}
     try:
-        r = requests.post(f"{API_URL}/ask", json=payload, headers=HEADERS, timeout=20)
+        r = requests.post(f"{API_URL}/ask", json=payload, headers=HEADERS, timeout=10)
         r.raise_for_status()
         raw = r.json().get("result", "")
     except Exception as e:
@@ -137,29 +116,26 @@ Text to classify:
     parsed["section"] = map_to_official(parsed["section"])
     return parsed
 
-# ---------- SAMPLING ----------
+
 def sampling_pass(page_texts: List[str], rate: int = SAMPLE_RATE) -> Dict[int, dict]:
     total = len(page_texts)
     sampled = {}
     print(f"Sampling every {rate} pages (total pages {total})")
     for p in range(0, total, rate):
-        # build small context of up to MAX_CONTEXT_PAGES centered on p
         start = max(0, p - (MAX_CONTEXT_PAGES // 2))
         end = min(total, start + MAX_CONTEXT_PAGES)
         start = max(0, end - MAX_CONTEXT_PAGES)
         context = "\n\n---PAGE_BREAK---\n\n".join(page_texts[start:end])
         if len(context.strip()) < 20:
-            # very small text -> mark Unknown locally
             sampled[p] = {"section": "Unknown", "position": "unknown", "confidence": 0.0}
             print(f"  page {p}: local empty -> Unknown")
             continue
         res = ask_text_classification(context)
         sampled[p] = res
         print(f"  page {p}: -> {res['section']} ({res['confidence']})")
-        time.sleep(0.08)  # small throttle to be polite
+        time.sleep(0.08)
     return sampled
 
-# ---------- BUILD ROUGH RANGES ----------
 def build_rough_ranges(sampled: Dict[int, dict], total_pages: int) -> List[Tuple[str, int, int]]:
     """
     From sampled pages, create approximate contiguous ranges (inclusive indices)
@@ -173,7 +149,6 @@ def build_rough_ranges(sampled: Dict[int, dict], total_pages: int) -> List[Tuple
     for p, info in items:
         sec = info["section"]
         if sec == "Unknown":
-            # treat Unknown as separator
             if cur_section is not None:
                 ranges.append((cur_section, cur_start, cur_end))
                 cur_section = None
@@ -191,7 +166,6 @@ def build_rough_ranges(sampled: Dict[int, dict], total_pages: int) -> List[Tuple
             cur_end = p
     if cur_section is not None:
         ranges.append((cur_section, cur_start, cur_end))
-    # clamp to page bounds
     cleaned = []
     for sec, s, e in ranges:
         s = max(0, s)
@@ -200,9 +174,8 @@ def build_rough_ranges(sampled: Dict[int, dict], total_pages: int) -> List[Tuple
     print("Rough ranges from sampling:", cleaned)
     return cleaned
 
-# ---------- BINARY SEARCH REFINEMENT (textual) ----------
+
 def classify_single_page(page_texts: List[str], page_idx: int) -> dict:
-    """Classify a single page using small context of that page +/-1 (if available)."""
     total = len(page_texts)
     start = max(0, page_idx - 1)
     end = min(total, page_idx + 2)
@@ -210,11 +183,7 @@ def classify_single_page(page_texts: List[str], page_idx: int) -> dict:
     return ask_text_classification(context)
 
 def binary_refine(page_texts: List[str], low: int, high: int, target_section: str) -> int:
-    """
-    Find boundary (first index within [low, high] inclusive) where pages become target_section.
-    If none found, return low.
-    Assumes low <= high.
-    """
+    
     lo = low
     hi = high
     last_positive = None
@@ -225,15 +194,12 @@ def binary_refine(page_texts: List[str], low: int, high: int, target_section: st
         print(f"   checking page {mid} -> {sec} ({info['confidence']})")
         if sec == target_section:
             last_positive = mid
-            hi = mid - 1  # try find earlier occurrence
+            hi = mid - 1  
         else:
             lo = mid + 1
     return last_positive if last_positive is not None else lo
 
-# ---------- POSTPROCESS: smoothing and non-overlap ----------
 def finalize_ranges(refined: List[Dict], total_pages: int) -> List[Dict]:
-    # Each refined entry: {"name":sec, "start":s_idx, "end":e_idx}
-    # Convert to 1-based pages, sort, remove overlaps by trimming earlier ranges
     if not refined:
         return []
     refined_sorted = sorted(refined, key=lambda x: x["start"])
@@ -246,20 +212,17 @@ def finalize_ranges(refined: List[Dict], total_pages: int) -> List[Dict]:
             continue
         cleaned.append({"name": r["name"], "startPage": s + 1, "endPage": e + 1})
         last_end = e + 1
-    # Merge adjacent ranges with same name
     merged = []
     for r in cleaned:
         if merged and merged[-1]["name"] == r["name"] and merged[-1]["endPage"] + 1 >= r["startPage"]:
             merged[-1]["endPage"] = max(merged[-1]["endPage"], r["endPage"])
         else:
             merged.append(r)
-    # Final validation: ensure page coverage <= total_pages
     for m in merged:
         m["startPage"] = max(1, min(m["startPage"], total_pages))
         m["endPage"] = max(1, min(m["endPage"], total_pages))
     return merged
 
-# ---------- MAIN PIPELINE ----------
 def build_sections_from_text(pdf_path: str) -> List[Dict]:
     page_texts = extract_texts(pdf_path)
     total_pages = len(page_texts)
@@ -270,22 +233,16 @@ def build_sections_from_text(pdf_path: str) -> List[Dict]:
 
     refined = []
     for sec, s_idx, e_idx in rough:
-        # expand window for binary refine
+    
         refine_low = max(0, s_idx - BIN_SEARCH_WINDOW)
         refine_high = min(total_pages - 1, e_idx + BIN_SEARCH_WINDOW)
         print(f"Refining section {sec} approx {s_idx}-{e_idx} -> search window {refine_low}-{refine_high}")
 
-        # find real start: first page in window that is classified as sec
         start_found = binary_refine(page_texts, refine_low, refine_high, sec)
-        # find real end: search from end of window backwards for last occurrence
-        # we can binary search for first occurrence after end and subtract 1
-        # But simpler: scan forward from start_found until sec no longer holds (bounded)
         if start_found >= total_pages:
             continue
-        # scan forward to find end
         cur = start_found
         last_sec = start_found - 1
-        # cap scanning to reasonable length (avoid full scan) — use BIN_SEARCH_WINDOW*2
         scan_limit = min(total_pages - 1, start_found + BIN_SEARCH_WINDOW * 3)
         while cur <= scan_limit:
             info = classify_single_page(page_texts, cur)
@@ -295,7 +252,6 @@ def build_sections_from_text(pdf_path: str) -> List[Dict]:
             else:
                 break
         if last_sec < start_found:
-            # fallback: set small range
             last_sec = min(total_pages - 1, start_found + 2)
         refined.append({"name": sec, "start": start_found, "end": last_sec})
         print(f"  Refined {sec} -> pages {start_found} to {last_sec}")
@@ -303,14 +259,13 @@ def build_sections_from_text(pdf_path: str) -> List[Dict]:
     final = finalize_ranges(refined, total_pages)
     return final
 
-# ---------- SAVE ----------
 def save_result_json(sections: List[Dict], out_path: str = "result.json"):
     data = {"sections": sections}
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
     print("Saved result to", out_path)
 
-# ---------- CLI ----------
+
 def main():
     import sys
     if len(sys.argv) < 2:
